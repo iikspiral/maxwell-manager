@@ -1,0 +1,32 @@
+<div class="main">
+    <el-row :gutter="24" class="config-head" style="margin: 0px;">
+        <el-col :span="22" >
+            <el-button type="success" size="mini" icon="el-icon-edit" v-if="isReadOnly" @click="isReadOnly = false">编辑</el-button>
+            <el-button size="mini" icon="el-icon-check" v-if="!isReadOnly" @click="onSubmit">保存</el-button>
+        </el-col>
+    </el-row>
+
+    <el-row style="margin-top: 10px;">
+        <el-alert
+                v-if="isReadOnly"
+                title="当前properties配置文件不可编辑,若要修改请点击编辑按钮。"
+                type="warning"
+                show-icon
+                :closable="false">
+        </el-alert>
+    </el-row>
+
+    <el-row style="margin-top: 10px;">
+        <el-row :gutter="24">
+            <el-col :span="5" >
+                <span class="properties-tag">properties</span>
+            </el-col>
+        </el-row>
+        <pre id="code" class="ace_editor" style="min-height:400px">
+            <textarea class="ace_text-input"></textarea>
+        </pre>
+        <el-row style="background-color:#337AB7;height:10px"></el-row>
+    </el-row>
+</div>
+
+

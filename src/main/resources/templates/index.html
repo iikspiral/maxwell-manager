@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>maxwell</title>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
+    <script src="/lib/require/require.js" data-main="/require.config" async="true" defer></script>
+</head>
+<body v-loading="loading">
+<el-container id="app">
+    <el-header>
+        <el-menu
+                class="el-menu-demo"
+                mode="horizontal"
+                background-color="#545c64"
+                text-color="#fff"
+                active-text-color="#ffd04b">
+            <el-menu-item index="2" class="title">
+                <img :src="logo_src" style="height: 47px;width: 160px;"/>
+            </el-menu-item>
+        </el-menu>
+    </el-header>
+    <el-container>
+        <el-aside width="200px">
+            <el-menu class="el-menu-vertical-demo"
+                    style="height: 700px;"
+                    router="true"
+                    :default-active="$route.path">
+                <template v-for="menu in menus">
+                    <el-menu-item v-if="!menu.children" :index="menu.path">
+                        <i :class="menu.icoClass"></i>
+                        <span slot="title">{{menu.name}}</span>
+                    </el-menu-item>
+                    <el-submenu v-if="menu.children" :index="menu.path">
+                        <template slot="title">
+                            <i :class="menu.icoClass"></i>
+                            <span>{{menu.name}}</span>
+                        </template>
+                        <el-menu-item v-for="item in menu.children" :index="item.path">{{item.name}}</el-menu-item>
+                    </el-submenu>
+                </template>
+            </el-menu>
+        </el-aside>
+        <el-main style="background-color: #F1F2F7;padding: 10px 10px;">
+            <el-breadcrumb separator="/" style="background-color: white;padding: 10px 10px;">
+                <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+                <template v-if="breadcrumbs && breadcrumbs.length > 0">
+                    <el-breadcrumb-item v-for="item in breadcrumbs">{{item}}</el-breadcrumb-item>
+                </template>
+            </el-breadcrumb>
+            <router-view style="margin: 10px 0px;"></router-view>
+        </el-main>
+    </el-container>
+</el-container>
+</body>
+</html>

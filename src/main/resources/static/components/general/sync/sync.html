@@ -1,0 +1,195 @@
+<div class="main">
+    <el-row :gutter="24" class="btn-head" style="margin: 0px;">
+        <el-col :span="22" >
+            <el-button type="success" size="mini" icon="el-icon-circle-check" @click="editDialogVisible = true">发布</el-button>
+            <el-popover
+                    placement="right"
+                    width="430"
+                    trigger="click"
+                    style="width: 600px;"
+                    v-model="searchPopoverVisible">
+                <el-form ref="searchForm" :model="searchForm" label-width="70px" size="mini">
+                    <el-form-item label="数据库名">
+                        <el-select  v-model="searchForm.dbName" placeholder="请选择数据库实例名" clearable>
+                            <el-option v-for="db in dataBases" :label="db.name" :value="db.name"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="数据库表">
+                        <el-select v-model="searchForm.tableNames" placeholder="请选择数据库表名" clearable>
+                            <el-option v-for="table in tables" :label="table.name" :value="table.name"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="创建时间">
+                        <el-date-picker
+                                v-model="searchForm.creatDate"
+                                type="daterange"
+                                range-separator="至"
+                                start-placeholder="开始日期"
+                                end-placeholder="结束日期">
+                        </el-date-picker>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" size="mini" @click="searchOnSubmit">确定</el-button>
+                        <el-button size="mini" type="text" @click="searchPopoverVisible = false">取消</el-button>
+                    </el-form-item>
+                </el-form>
+                <el-button size="mini" slot="reference" icon="el-icon-search" @click="searchPopoverVisible = true">查询</el-button>
+            </el-popover>
+            <el-tooltip class="item" effect="dark" content="刷新" placement="top-start">
+                <el-button type="text" size="medium" icon="el-icon-refresh" circle @click="queryBootstrap"></el-button>
+            </el-tooltip>
+        </el-col>
+        <el-col :span="2" class="opt">
+            <el-tooltip class="item" effect="dark" content="2分钟刷新一次" placement="top-start">
+                <el-checkbox v-model="isRefresh">刷新</el-checkbox>
+            </el-tooltip>
+        </el-col>
+    </el-row>
+
+    <!--查询条件提示栏-->
+    <el-row class="info-head" v-if="noteTitle">
+        <el-alert
+                :description="noteTitle"
+                title="已设置过滤条件"
+                type="success"
+                show-icon
+                @close="noteTitle = ''">
+        </el-alert>
+    </el-row>
+
+    <!--历史展示块区域-->
+    <el-row>
+        <el-row v-for="(dbMaps, date) in viewDateDatas" class="card">
+            <el-row :gutter="24" class="head">
+                <el-col :span="5" >
+                    <span class="div-date">{{date?date:'创建时间未知'}}</span>
+                </el-col>
+                <el-col :span="2" :offset="17" class="opt">
+                    <a class="fold" @click="">[折叠]</a>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-tabs class="tabs-panel" :value="date+'_0'">
+                    <el-tab-pane v-for="(datas, dbName, index) in dbMaps "
+                                 :label="dbName"
+                                 :name="date+'_'+index">
+                        <el-table
+                                name="first"
+                                :data="datas"
+                                border
+                                size="mini"
+                                fit="false"
+                                width="100"
+                                max-height="300">
+                            <el-table-column
+                                    prop="isComplete"
+                                    label="执行状态"
+                                    width="120"
+                                    filter-placement="bottom-end"
+                                    sortable="true">
+                                <template slot-scope="scope">
+                                    <el-tag class="tag"
+                                            size="small"
+                                            :color="scope.row.isComplete == '0' ? '#F0AD4E' : '#A4A4A4'"
+                                            disable-transitions>{{scope.row.isComplete == '0' ? '未完成':'已完成'}}</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column
+                                    prop="databaseName"
+                                    label="数据库名"
+                                    sortable="true"
+                                    show-overflow-tooltip="true">
+                            </el-table-column>
+                            <el-table-column
+                                    prop="tableName"
+                                    label="数据表名"
+                                    sortable="true"
+                                    show-overflow-tooltip="true">
+                            </el-table-column>
+                            <el-table-column
+                                    prop="whereClause"
+                                    label="过滤条件"
+                                    sortable="true"
+                                    show-overflow-tooltip="true">ss
+                            </el-table-column>
+                            <el-table-column
+                                prop="clientId"
+                                label="客户端ID"
+                                sortable="true"
+                                show-overflow-tooltip="true">
+                            </el-table-column>
+                            <el-table-column
+                                    prop="insertedRows"
+                                    label="同步记录数"
+                                    sortable="true"
+                                    show-overflow-tooltip="true">
+                            </el-table-column>
+                            <el-table-column
+                                    prop="createdAt"
+                                    label="创建时间"
+                                    sortable="true"
+                                    show-overflow-tooltip="true">
+                            </el-table-column>
+                            <el-table-column
+                                    prop="startedAt"
+                                    label="开始执行时间"
+                                    sortable="true"
+                                    show-overflow-tooltip="true">
+                            </el-table-column>
+                            <el-table-column label="操作" width="100">
+                                <template slot-scope="scope">
+                                    <el-tooltip class="item" effect="dark" content="编辑" placement="top-start">
+                                        <el-button size="mini" icon="el-icon-edit-outline" circle @click="editBootstrap(scope.row)"></el-button>
+                                    </el-tooltip>
+                                    <el-tooltip class="item" effect="dark" content="删除" placement="top-start">
+                                        <el-button size="mini" icon="el-icon-close" circle @click="deleteBootstrap(scope.row)"></el-button>
+                                    </el-tooltip>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                    </el-tab-pane>
+                </el-tabs>
+            </el-row>
+        </el-row>
+    </el-row>
+
+    <!-- dialog -->
+    <el-dialog
+            :title="!isEdit ? '发布' : '修改'"
+            :visible.sync="editDialogVisible"
+            width="37%"
+            size="mini">
+        <el-form ref="form" :model="editForm" label-width="90px" size="medium">
+            <el-form-item label="数据库名">
+                <el-select v-model="editForm.dbName" placeholder="请选择数据库名" v-if="!isEdit">
+                    <el-option v-for="db in dataBases" :label="db.name" :value="db.name"></el-option>
+                </el-select>
+                <el-input v-model="editForm.lableDbName" disabled v-if="isEdit"></el-input>
+            </el-form-item>
+            <el-form-item label="数据库表名">
+                <el-select v-model="editForm.tableNames" placeholder="请选择数据库表名" v-if="!isEdit">
+                    <el-option v-for="table in tables" :label="table.name" :value="table.name"></el-option>
+                </el-select>
+                <el-input v-model="editForm.lableTableName" disabled v-if="isEdit"></el-input>
+            </el-form-item>
+            <el-form-item label="过滤条件">
+                <el-input
+                        type="textarea"
+                        :autosize="{ minRows: 4, maxRows: 6}"
+                        placeholder="请输入内容，如：id=2 and name='test' ..."
+                        v-model="editForm.whereClause">
+                </el-input>
+            </el-form-item>
+            <el-form-item label="执行状态">
+                <el-radio-group v-model="editForm.isComplete" size="small">
+                    <el-radio border label="0">未完成</el-radio>
+                    <el-radio border label="1">已完成</el-radio>
+                </el-radio-group>
+            </el-form-item>
+            <el-form-item size="small">
+                <el-button type="primary" @click="onSubmit">{{!isEdit ? '立即创建' : '提交'}}</el-button>
+                <el-button type="text" @click="editDialogVisible = false">取消</el-button>
+            </el-form-item>
+        </el-form>
+    </el-dialog>
+</div>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.puyoma.maxwell.dao.BootstrapDao">
+
+    <resultMap type="com.puyoma.maxwell.entity.Bootstrap" id="BootstrapMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="databaseName" column="database_name" jdbcType="VARCHAR"/>
+        <result property="tableName" column="table_name" jdbcType="VARCHAR"/>
+        <result property="whereClause" column="where_clause" jdbcType="VARCHAR"/>
+        <result property="isComplete" column="is_complete" jdbcType="INTEGER"/>
+        <result property="insertedRows" column="inserted_rows" jdbcType="INTEGER"/>
+        <result property="totalRows" column="total_rows" jdbcType="INTEGER"/>
+        <result property="createdAt" column="created_at" jdbcType="TIMESTAMP"/>
+        <result property="startedAt" column="started_at" jdbcType="TIMESTAMP"/>
+        <result property="completedAt" column="completed_at" jdbcType="TIMESTAMP"/>
+        <result property="binlogFile" column="binlog_file" jdbcType="VARCHAR"/>
+        <result property="binlogPosition" column="binlog_position" jdbcType="INTEGER"/>
+        <result property="clientId" column="client_id" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="BootstrapMap">
+        select
+          id, database_name, table_name, where_clause, is_complete, inserted_rows, total_rows, created_at, started_at, completed_at, binlog_file, binlog_position, client_id
+        from data_transfer_plasma.bootstrap
+        where id = #{id}
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="BootstrapMap">
+        select
+          id, database_name, table_name, where_clause, is_complete, inserted_rows, total_rows, created_at, started_at, completed_at, binlog_file, binlog_position, client_id
+        from data_transfer_plasma.bootstrap
+        limit #{offset}, #{limit}
+    </select>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" resultMap="BootstrapMap">
+        select
+              id, database_name, table_name, where_clause, is_complete, inserted_rows, total_rows, created_at, started_at, completed_at, binlog_file, binlog_position, client_id
+            from data_transfer_plasma.bootstrap
+            <where>
+                <if test="id != null">
+                    and id = #{id}
+                </if>
+                <if test="databaseName != null and databaseName != ''">
+                    and database_name = #{databaseName}
+                </if>
+                <if test="tableName != null and tableName != ''">
+                    and table_name = #{tableName}
+                </if>
+                <if test="isComplete != null">
+                    and is_complete = #{isComplete}
+                </if>
+                <if test="startTime != null">
+                    <![CDATA[ and created_at >= #{startTime}]]>
+                </if>
+                <if test="endTime != null">
+                    <![CDATA[ and created_at <= DATE_ADD(#{endTime},INTERVAL 1 DAY)]]>
+                </if>
+            </where>
+        order by created_at desc
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into data_transfer_plasma.bootstrap(database_name, table_name, where_clause, is_complete, inserted_rows, total_rows, created_at, started_at, completed_at, binlog_file, binlog_position, client_id)
+        values (#{databaseName}, #{tableName}, #{whereClause}, #{isComplete}, #{insertedRows}, #{totalRows}, #{createdAt}, #{startedAt}, #{completedAt}, #{binlogFile}, #{binlogPosition}, #{clientId})
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update data_transfer_plasma.bootstrap
+        <set>
+            <if test="databaseName != null and databaseName != ''">
+                database_name = #{databaseName},
+            </if>
+            <if test="tableName != null and tableName != ''">
+                table_name = #{tableName},
+            </if>
+            <if test="whereClause != null and whereClause != ''">
+                where_clause = #{whereClause},
+            </if>
+            <if test="isComplete != null">
+                is_complete = #{isComplete},
+            </if>
+            <if test="insertedRows != null">
+                inserted_rows = #{insertedRows},
+            </if>
+            <if test="totalRows != null">
+                total_rows = #{totalRows},
+            </if>
+            <if test="createdAt != null">
+                created_at = #{createdAt},
+            </if>
+            <if test="startedAt != null">
+                started_at = #{startedAt},
+            </if>
+            <if test="completedAt != null">
+                completed_at = #{completedAt},
+            </if>
+            <if test="binlogFile != null and binlogFile != ''">
+                binlog_file = #{binlogFile},
+            </if>
+            <if test="binlogPosition != null">
+                binlog_position = #{binlogPosition},
+            </if>
+            <if test="clientId != null and clientId != ''">
+                client_id = #{clientId},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from data_transfer_plasma.bootstrap where id = #{id}
+    </delete>
+
+</mapper>

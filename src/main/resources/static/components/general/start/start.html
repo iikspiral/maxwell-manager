@@ -1,0 +1,13 @@
+<div class="main-plane">
+    <el-form  label-position="left" ref="form" :model="form" label-width="100px">
+        <el-form-item label="maxwell启停">
+            <el-switch
+                    v-model="form.value"
+                    active-color="#13ce66"
+                    inactive-color="#ff4949" @change="startEvent">
+            </el-switch>
+        </el-form-item>
+    </el-form>
+</div>
+
+

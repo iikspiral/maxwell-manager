@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.puyoma.maxwell.dao.TablesDao">
+
+    <resultMap type="com.puyoma.maxwell.entity.Tables" id="TablesMap">
+        <result property="id" column="id" jdbcType="INTEGER"/>
+        <result property="schemaId" column="schema_id" jdbcType="INTEGER"/>
+        <result property="databaseId" column="database_id" jdbcType="INTEGER"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="charset" column="charset" jdbcType="VARCHAR"/>
+        <result property="pk" column="pk" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="TablesMap">
+        select
+          id, schema_id, database_id, name, charset, pk
+        from tables
+        where id = #{id}
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="TablesMap">
+        select
+          id, schema_id, database_id, name, charset, pk
+        from tables
+        limit #{offset}, #{limit}
+    </select>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" resultMap="TablesMap">
+        select
+          id, schema_id, database_id, name, charset, pk
+        from tables
+        <where>
+            <if test="id != null">
+                and id = #{id}
+            </if>
+            <if test="schemaId != null">
+                and schema_id = #{schemaId}
+            </if>
+            <if test="databaseId != null">
+                and database_id = #{databaseId}
+            </if>
+            <if test="name != null and name != ''">
+                and name = #{name}
+            </if>
+            <if test="charset != null and charset != ''">
+                and charset = #{charset}
+            </if>
+            <if test="pk != null and pk != ''">
+                and pk = #{pk}
+            </if>
+        </where>
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="id" useGeneratedKeys="true">
+        insert into tables(schema_id, database_id, name, charset, pk)
+        values (#{schemaId}, #{databaseId}, #{name}, #{charset}, #{pk})
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update tables
+        <set>
+            <if test="schemaId != null">
+                schema_id = #{schemaId},
+            </if>
+            <if test="databaseId != null">
+                database_id = #{databaseId},
+            </if>
+            <if test="name != null and name != ''">
+                name = #{name},
+            </if>
+            <if test="charset != null and charset != ''">
+                charset = #{charset},
+            </if>
+            <if test="pk != null and pk != ''">
+                pk = #{pk},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from tables where id = #{id}
+    </delete>
+
+</mapper>

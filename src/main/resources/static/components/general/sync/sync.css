@@ -1,0 +1,55 @@
+div.main{
+    min-height: 200px;
+    font-size: 13px;
+}
+.btn-head{
+    padding: 5px;
+    background-color: white;
+}
+.info-head{
+    background-color: #F1F2F7;
+    margin-left: 0px;
+    padding-top: 10px;
+}
+
+/*main panel*/
+.head{
+    background-color: #F1F2F7;
+    margin-left: 0px;
+    padding-top: 20px;
+}
+.head .fold{
+    color: #419EFF;
+}
+.head .fold:hover{
+    cursor:pointer;
+    color: #337AB7;
+    text-decoration: underline;
+}
+.div-date{
+    height: 20px;
+    padding:0px 10px;
+    background-color: #337AB7;
+    color: white;
+}
+.card{
+    background-color: white;
+}
+.tabs-panel{
+    margin: 0px 10px;
+    padding: 10px 0px;
+}
+div.main .tag{
+    color: white;
+    border-radius:0px;
+    border:0px solid rgba(64,158,255,.2)
+}
+.el-popover{
+    width: 600px;
+}
+.el-dialog__body{
+    padding:10px 20px;
+}
+.el-radio{
+    margin-right:5px;
+}

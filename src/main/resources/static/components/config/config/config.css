@@ -1,0 +1,19 @@
+div.main{
+    min-height: 200px;
+    font-size: 13px;
+}
+.ace_editor{
+    margin: 0px 0px;
+}
+
+.config-head{
+    padding: 5px 0px;
+    background-color: white;
+}
+
+.properties-tag{
+    height: 20px;
+    padding:0px 10px;
+    background-color: #337AB7;
+    color: white;
+}

@@ -1,0 +1,28 @@
+body{
+    margin: 0px 0px;
+}
+.el-header{
+    padding: 0px 0px;
+}
+.title{
+    font-family: ‘Times New Roman’, Times, serif;
+    font-size: 30px;
+}
+
+/*main content*/
+.div-main{
+
+
+}
+.main-content{
+    padding: 10px 0px;
+}
+
+
+.el-menu-item.is-active{
+    background-color: #EDF5FF;
+}
+/*加载进度条颜色*/
+#nprogress .bar {
+    background: #67C23A !important; //自定义颜色
+}
