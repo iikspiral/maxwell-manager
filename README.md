@@ -20,22 +20,22 @@
 
 1.首页(程序监控)
 
-![home](/usr/local/resource/bomc/code/maxwell-manage/doc/images/home.jpg)
+![home](https://github.com/gaddwei/maxwell-manage/blob/master/doc/images/home.jpg)
 
 
 
 maxwell 开关
 
-![start](/usr/local/resource/bomc/code/maxwell-manage/doc/images/start.jpg)
+![start](https://github.com/gaddwei/maxwell-manage/blob/master/doc/images/start.jpg)
 
 
 
 执行表同步
 
-![sync](/usr/local/resource/bomc/code/maxwell-manage/doc/images/sync.jpg)
+![sync](https://github.com/gaddwei/maxwell-manage/blob/master/doc/images/sync.jpg)
 
 
 
 配置文件修改
 
-![configEdit](/usr/local/resource/bomc/code/maxwell-manage/doc/images/configEdit.jpg)
+![configEdit](https://github.com/gaddwei/maxwell-manage/blob/master/doc/images/configEdit.jpg)
