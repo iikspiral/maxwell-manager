@@ -1,4 +1,4 @@
-![logo](/usr/local/resource/bomc/code/maxwell-manage/doc/images/logo.png)
+![logo](https://github.com/gaddwei/maxwell-manage/blob/master/doc/images/logo.png)
 
 ## maxwell-manage: maxwell manage ui system
 
