@@ -1,19 +1,19 @@
-// 定义路由
-// 每个路由应该映射一个组件。 其中"component" 可以是
-// 通过 Vue.extend() 创建的组件构造器，
-// 或者，只是一个组件配置对象。
-// 我们晚点再讨论嵌套路由。
-// 创建 router 实例，然后传 `routes` 配置
-
+/** 定义路由
+ * 每个路由应该映射一个组件。 其中"component" 可以是
+ * 通过 Vue.extend() 创建的组件构造器，
+ * 或者，只是一个组件配置对象。
+ * 创建 router 实例，然后传 `routes` 配置
+ *使用模块化机制编程，導入Vue和VueRouter，要调用 Vue.use(VueRouter)
+ */
 define([
     'vue',
     'vueRouter',
-    '/components/home/home.js',
-    '/components/general/start/start.js',
-    '/components/general/sync/sync.js',
-    '/components/config/config/config.js',
-    '/components/config/filter/filter.js',
-    '/components/help/about/about.js'
+    'components/home/home.js',
+    'components/general/start/start.js',
+    'components/general/sync/sync.js',
+    'components/config/config/config.js',
+    'components/config/filter/filter.js',
+    'components/help/about/about.js'
 ], function(Vue, vueRouter,
             home,
             start,
@@ -25,7 +25,6 @@ define([
     Vue.use(vueRouter);
 
     var routers =  new vueRouter({
-       // mode: 'history',
         //路径配置
         routes:[
             { path: '/',name:'home', component: home},
@@ -44,6 +43,7 @@ define([
         NProgress.start();
         next();
     });
+
     //路由后事件
     routers.afterEach(function () {
         NProgress.done();

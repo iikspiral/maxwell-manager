@@ -9,13 +9,25 @@ body{
     font-size: 30px;
 }
 
+img.logo_img{
+    height: 47px;
+    width: 160px;
+}
+.breadcrumb{
+    background-color: white;
+    padding: 10px 10px;
+}
+
 /*main content*/
-.div-main{
-
-
+.main-container{
+    background-color: #F1F2F7;
+    padding: 10px 10px;
 }
 .main-content{
     padding: 10px 0px;
+}
+.main-view{
+    margin: 10px 0px;
 }
 
 

@@ -1,4 +1,13 @@
-div.main-plane{
+div.main-home{
     background-color: white;
     padding: 10px 10px;
+}
+.main-home .title{
+    font-size: 13px;
+}
+.main-home .row{
+    margin-top: 20px;
+}
+.main-home .refresh{
+    padding: 5px 5px;
 }

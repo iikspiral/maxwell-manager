@@ -1,11 +1,11 @@
-// 0. 如果使用模块化机制编程，導入Vue和VueRouter，要调用 Vue.use(VueRouter)
+// 0.
 
 // 1. 定义（路由）组件。
 // 可以从其他文件 import 进来
 define([
     "vue",
-    "/config/menu.config.js",
-    "/router/router.js",
+    "config/menu.config.js",
+    "router/router.js",
     "css!/index.css"
 ], function(Vue,menus,router) {
 
@@ -15,7 +15,8 @@ define([
             menus: menus,
             breadcrumbs:null,
             currentRoute: '',
-            logo_src:'/images/logo.png'
+            logo_src:'/images/logo.png',
+            homeLabel:'首页'
         },
         methods: {
         },
@@ -24,9 +25,13 @@ define([
 
         },
         watch: {
+            /**
+             * 当前路径变化，用于设置面包屑
+             * @param path
+             */
             currentRoute(path){
                 var flag = false;
-                for(var i=0;i<menus.length;i++){
+                for(var i=0;i < menus.length;i++){
                     var menu = menus[i];
                     //初始化
                     this.breadcrumbs=[];

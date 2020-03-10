@@ -1,5 +1,9 @@
+/**
+ * 全局配置文件js,用于引入全部依赖文件包括js、css
+ */
 require.config({
-    baseUrl: "./", //reqireJS解析的基准路径，define引入的基准根路径
+    //requireJS解析的基准路径，define引入的基准根路径
+    baseUrl: "./",
     map: {
         '*': {
             //require 插件用于加载css
@@ -11,9 +15,12 @@ require.config({
         vue: 'lib/vue/vue.min',
         vueRouter: 'lib/vue/vue-router',
         axios: 'lib/plugins/axios.min',
+        //饿了么ui框架
         ELEMENT: 'lib/element-ui/lib/index',
+        //日期处理工具
         dayjs: 'lib/dayjs/dayjs.min',
-        nprogress: 'lib/nprogress/nprogress',
+        //页面加载进度条
+        nprogress: 'lib/nprogress/nprogress.min',
         //api接口配置
         api: 'config/api.config',
         //TempLate 模板插件，用于加载html文件模板
@@ -34,11 +41,11 @@ require.config({
         },
         nprogress: {
             deps: [
-                'vue','css!lib/nprogress/nprogress.css'
+                'vue','css!lib/nprogress/nprogress.min.css'
             ]
         },
         ace:{
-            deps:['lib/ace/ext-language_tools']
+            deps:['lib/ace/ext-language_tools.js']
         }
     }
 });
@@ -64,5 +71,5 @@ require([
         ELEMENT) {
     Vue.use(ELEMENT);
     //加载必要模块开始执行
-    require(['/index.js']);
+    require(['index.js']);
 });

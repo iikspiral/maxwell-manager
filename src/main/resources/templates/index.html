@@ -17,7 +17,7 @@
                 text-color="#fff"
                 active-text-color="#ffd04b">
             <el-menu-item index="2" class="title">
-                <img :src="logo_src" style="height: 47px;width: 160px;"/>
+                <img :src="logo_src" class="logo_img"/>
             </el-menu-item>
         </el-menu>
     </el-header>
@@ -42,14 +42,14 @@
                 </template>
             </el-menu>
         </el-aside>
-        <el-main style="background-color: #F1F2F7;padding: 10px 10px;">
-            <el-breadcrumb separator="/" style="background-color: white;padding: 10px 10px;">
-                <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+        <el-main class="main-container">
+            <el-breadcrumb separator="/" class="breadcrumb">
+                <el-breadcrumb-item v-if="homeLabel" :to="{ path: '/' }">{{homeLabel}}</el-breadcrumb-item>
                 <template v-if="breadcrumbs && breadcrumbs.length > 0">
                     <el-breadcrumb-item v-for="item in breadcrumbs">{{item}}</el-breadcrumb-item>
                 </template>
             </el-breadcrumb>
-            <router-view style="margin: 10px 0px;"></router-view>
+            <router-view class="main-view"></router-view>
         </el-main>
     </el-container>
 </el-container>
