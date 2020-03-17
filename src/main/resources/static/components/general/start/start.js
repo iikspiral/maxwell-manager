@@ -12,7 +12,8 @@ define([
             return {
                 form:{
                     name:'',
-                    value: true
+                    args:'',
+                    value: false
                 }
             }
         },
@@ -26,6 +27,10 @@ define([
                     }else {
                         _this.form.value=false;
                     }
+
+                    if(response.data.data.args){
+                        _this.form.args=response.data.data.args;
+                    }
                 });
         },
         methods: {
@@ -34,8 +39,9 @@ define([
                 var _this = this;
                 //服务开启
                 if(value){
-                    axios.put(Api.MAXWELL_URL)
-                        .then(function (response) {
+                    axios.put(Api.MAXWELL_URL,{
+                        args:_this.form.args
+                    }).then(function (response) {
                             if(response.data.success){
                                 _this.$message({
                                     message: 'maxwell 已开启',
@@ -52,21 +58,29 @@ define([
                 }
                 //服务关闭
                 else {
-                    axios.delete(Api.MAXWELL_URL)
-                        .then(function (response) {
-                            if(response.data.success){
-                                _this.$message({
-                                    message: 'maxwell 已关闭',
-                                    type: 'success'
-                                });
-                            }else {
-                                _this.form.value=true;
-                                _this.$message({
-                                    message: 'maxwell 关闭失败,错误'+response.message,
-                                    type: 'warning'
-                                });
-                            }
-                        });
+                    this.$confirm('此操作将关闭数据同步服务, 是否继续?', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(function () {
+                        axios.delete(Api.MAXWELL_URL)
+                            .then(function (response) {
+                                if(response.data.success){
+                                    _this.$message({
+                                        message: 'maxwell 已关闭',
+                                        type: 'success'
+                                    });
+                                }else {
+                                    _this.form.value=true;
+                                    _this.$message({
+                                        message: 'maxwell 关闭失败,错误'+response.message,
+                                        type: 'warning'
+                                    });
+                                }
+                            });
+                    }).catch(function () {
+                        _this.form.value=true;
+                    });
                 }
             }
         }

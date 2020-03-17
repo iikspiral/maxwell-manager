@@ -19,7 +19,6 @@ import java.util.Map;
  * @description: com.puyoma.maxwell.controller
  * @date:2020/3/2
  */
-
 @RestController
 @RequestMapping("/api/general")
 public class GeneralController {
@@ -33,10 +32,10 @@ public class GeneralController {
      * @return
      */
     @RequestMapping(value = "/maxwell",method = RequestMethod.PUT)
-    public JsonResult<String> maxwellPut(){
+    public JsonResult<String> maxwellPut(@RequestBody Map<String,Object> argsMap){
         try{
             //启动maxwell
-            maxwellService.start();
+            maxwellService.start(argsMap);
             return JsonResult.success("启动成功");
         }catch (Exception e){
             logger.error("",e);
@@ -67,13 +66,7 @@ public class GeneralController {
     @RequestMapping(value = "/maxwell",method = RequestMethod.GET)
     public JsonResult<JSONObject> maxwellGet(){
 
-        JSONObject js = new JSONObject();
-        if(maxwellService.getMaxwellStatus()){
-            js.put("code",Boolean.TRUE);
-            return new JsonResult<>(js);
-        }
-        js.put("code",Boolean.FALSE);
-        return new JsonResult<>(js);
+        return maxwellService.getMaxwell();
     }
 
     /**

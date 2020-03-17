@@ -1,10 +1,22 @@
-div.main-plane{
-    background-color: white;
-    padding: 10px 10px;
+div.filter-main{
+    min-height: 200px;
+    font-size: 13px;
 }
-.ace_editor{
+.filter-main .ace_editor{
     margin: 0px 0px;
 }
-div.is-top{
-    margin-bottom: 3px;
+
+.filter-main .filter-head{
+    padding: 5px 0px;
+    background-color: white;
+}
+
+.filter-main .javascript-tag{
+    height: 20px;
+    padding:0px 10px;
+    background-color: #337AB7;
+    color: white;
+}
+.filter-main .help-popover{
+    margin-left: 10px;
 }

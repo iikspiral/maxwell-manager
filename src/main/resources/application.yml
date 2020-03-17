@@ -11,7 +11,19 @@ spring:
     url: jdbc:mysql://106.54.209.169:3306/data_transfer_plasma?useUnicode=true&characterEncoding=utf-8&useSSL=false&allowMultiQueries=true&zeroDateTimeBehavior=convertToNull
     username: root
     password: jytc$123
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 15
+      minimum-idle: 5
+      auto-commit: true
+      idle-timeout: 30000
+      pool-name: DatebookHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
 mybatis:
   mapper-locations: classpath:mapper/*.xml
 server:
   port: 8080
+maxwell:
+  configPath: /usr/local/resource/bomc/code/maxwell-manage/src/main/resources/config.properties

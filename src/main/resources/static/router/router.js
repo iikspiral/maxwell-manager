@@ -24,7 +24,7 @@ define([
     'use strict';
     Vue.use(vueRouter);
 
-    var routers =  new vueRouter({
+    let routers =  new vueRouter({
         //路径配置
         routes:[
             { path: '/',name:'home', component: home},
@@ -37,7 +37,7 @@ define([
     });
 
     //加载进度条
-    var NProgress = require('nprogress');
+    let NProgress = require('nprogress');
     //路由前事件
     routers.beforeEach(function (to,from,next) {
         NProgress.start();

@@ -12,6 +12,7 @@ public class MaxwellApplication {
     public static void main(String[] args) {
         SpringApplication.run(MaxwellApplication.class,args);
         logger.info("服务启动完毕...");
+
     }
 
 }

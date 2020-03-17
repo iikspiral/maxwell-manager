@@ -28,7 +28,8 @@ require.config({
         //加载ace编辑器
         ace:'lib/ace/ace',
         //图表
-        g2:'lib/g2/g2.min'
+        g2:'lib/g2/g2.min',
+        sockjs:'lib/socket/sockjs.min'
     },
 
     //模块依赖配置
@@ -46,6 +47,9 @@ require.config({
         },
         ace:{
             deps:['lib/ace/ext-language_tools.js']
+        },
+        sockjs:{
+            deps:['lib/socket/stomp.min']
         }
     }
 });
@@ -58,6 +62,7 @@ require([
         'nprogress',
         'ace',
         'g2',
+        'sockjs',
         'ELEMENT','css','text'],
     function (
         Vue,
@@ -68,6 +73,7 @@ require([
         nprogress,
         ace,
         g2,
+        sockjs,
         ELEMENT) {
     Vue.use(ELEMENT);
     //加载必要模块开始执行

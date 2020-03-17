@@ -3,21 +3,27 @@ package com.puyoma.maxwell.service;
 import com.alibaba.fastjson.JSONObject;
 import com.codahale.metrics.*;
 import com.codahale.metrics.Timer;
-import com.djdch.log4j.StaticShutdownCallbackRegistry;
 import com.google.api.client.util.ArrayMap;
+import com.google.common.base.Strings;
+import com.puyoma.maxwell.config.MaxwellBootConfig;
 import com.puyoma.maxwell.dao.BootstrapDao;
 import com.puyoma.maxwell.dao.DatabasesDao;
 import com.puyoma.maxwell.dao.TablesDao;
 import com.puyoma.maxwell.entity.Bootstrap;
 import com.puyoma.maxwell.entity.Databases;
 import com.puyoma.maxwell.entity.Tables;
+import com.puyoma.maxwell.util.CacheUtil;
 import com.puyoma.maxwell.util.JsonResult;
-import com.puyoma.maxwell.util.MaxwellApp;
-import com.zendesk.maxwell.MaxwellConfig;
+import com.puyoma.maxwell.zendesk.Maxwell;
+import com.puyoma.maxwell.zendesk.MaxwellConfig;
+import com.zendesk.maxwell.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,7 +42,7 @@ public class MaxwellService {
     /**
      * maxwell实例
      */
-    private MaxwellApp maxwell;
+    private Maxwell maxwell;
 
     /**
      * maxwell启动状态
@@ -54,6 +60,9 @@ public class MaxwellService {
     private MaxwellConfig maxwellConfig;
 
     @Autowired
+    private MaxwellBootConfig bootConfig;
+
+    @Autowired
     private BootstrapDao bootstrapDao;
 
     @Autowired
@@ -62,18 +71,46 @@ public class MaxwellService {
     @Autowired
     private TablesDao tablesDao;
 
-    public synchronized MaxwellConfig initMaxwellConfig(){
+    public synchronized MaxwellConfig initMaxwellConfig() throws Exception {
         if(maxwellConfig == null){
-            //获取输入变量
+
+            //启动web程序参数优先级3
             String command = System.getProperty("sun.java.command");
-            String[] commands = command.split("--");
-            List<String> args = new ArrayList<>();
-            for(String str : commands){
-                if(str.contains("=")){
-                    args.add("--"+str.trim());
+            Map<String,String> argsMap = new HashMap<>();
+            for ( String opt : command.split("--") ) {
+                if(opt.trim().contains("=")){
+                    String[] opts = opt.split("=");
+                    if(opts.length == 2){
+                        argsMap.put(opts[0],opts[1]);
+                    }
                 }
             }
-            maxwellConfig = new MaxwellConfig(args.toArray(new String[]{}));
+
+            //启动maxwell 优先级2
+            Object obj = CacheUtil.getObjectByname(MaxwellBootConfig.MAXWELL_START_UP_ARGS);
+            if(obj != null){
+                String[] strs = (String[]) obj;
+                for(String opt : strs){
+                    String[] opts = opt.split("=");
+                    if(opts.length == 2){
+                        argsMap.put(opts[0].replace("--",""),opts[1]);
+                    }
+                }
+            }
+            //获取输入变量
+            List<String> args = new ArrayList<>();
+            if(!argsMap.isEmpty()){
+                for(String key : argsMap.keySet()){
+                    args.add("--"+key+"="+argsMap.get(key));
+                }
+            }
+
+            String configProperties = null;
+            if(Strings.isNullOrEmpty(configProperties)){
+                args.add("--config="+bootConfig.getConfigPath());
+            }
+
+            return new MaxwellConfig(args.toArray(new String[]{}),configProperties);
         }
         return maxwellConfig;
     }
@@ -82,23 +119,39 @@ public class MaxwellService {
      * maxwell 服务启动
      * @return
      */
-    public boolean start(){
+    public boolean start(Map<String,Object> argsMap){
         try{
-            logger.info("maxwell 正在启动中...");
-            initMaxwellConfig();
-            maxwell = new MaxwellApp(maxwellConfig);
-            maxwellStatus = true;
-            if ( maxwellConfig.log_level != null ){
-                Runtime.getRuntime().addShutdownHook(new Thread(()->{
-                    maxwell.terminate();
-                    StaticShutdownCallbackRegistry.invoke();
-                }));
+            //本地持久化
+            String args = argsMap.get("args").toString();
+            if(!Strings.isNullOrEmpty(args)){
+                List<String> list = new ArrayList<>();
+                for(String opt : args.trim().split("--")){
+                    if(opt.contains("=")){
+                        list.add("--"+opt.trim());
+                    }
+                }
+                CacheUtil.putCache(MaxwellBootConfig.MAXWELL_START_UP_ARGS,list.toArray(new String[]{}));
             }
+            logger.info("maxwell 正在启动中...");
+
+            Logging.setupLogBridging();
+            maxwellConfig = initMaxwellConfig();
+
+            if ( maxwellConfig.log_level != null )
+                Logging.setLevel(maxwellConfig.log_level);
+
+            maxwell = new Maxwell(maxwellConfig);
+            Runtime.getRuntime().addShutdownHook(new Thread(()->{
+                maxwell.terminate();
+            }));
+            maxwellStatus = true;
+            CacheUtil.putCache(MaxwellBootConfig.MAXWELL_STATUS,true);
             maxwell.start();
             logger.info("maxwell 已经启动完成!");
-
         }catch (Exception e){
+            maxwellConfig = null;
             maxwellStatus = false;
+            CacheUtil.putCache(MaxwellBootConfig.MAXWELL_STATUS,false);
             logger.error("",e);
         }
         return maxwellStatus;
@@ -109,11 +162,27 @@ public class MaxwellService {
         maxwell.stop();
         maxwellConfig = null;
         maxwellStatus = false;
+        CacheUtil.putCache(MaxwellBootConfig.MAXWELL_STATUS,false);
         logger.info("maxwell 已关闭!");
     }
 
-    public boolean getMaxwellStatus() {
-        return maxwellStatus;
+    public JsonResult<JSONObject> getMaxwell() {
+
+        JSONObject js = new JSONObject();
+        Object obj = CacheUtil.getObjectByname(MaxwellBootConfig.MAXWELL_START_UP_ARGS);
+        if(null != obj){
+            String argStr = "";
+            for(String arg : (String[]) obj){
+                argStr += " "+arg;
+            }
+            js.put("args",argStr);
+        }
+        if(maxwellStatus){
+            js.put("code",Boolean.TRUE);
+            return new JsonResult<>(js);
+        }
+        js.put("code",Boolean.FALSE);
+        return new JsonResult<>(js);
     }
 
 
@@ -260,56 +329,71 @@ public class MaxwellService {
      * 系统统计信息
      */
     public JsonResult<JSONObject> metrics(){
-
-        if(maxwellConfig == null
-                || maxwellConfig.metricRegistry == null){
-            return JsonResult.failure("请先启动maxwell服务...");
-        }
-        MetricRegistry metricRegistry = maxwellConfig.metricRegistry;
         JSONObject js = new JSONObject();
         js.put("version","4.0.0");
 
         //gauges
         Map<String,Object> gaugesMap = new HashMap<>();
-        SortedMap<String, Gauge> gauges = metricRegistry.getGauges();
-        for(String key : gauges.keySet()){
-            gaugesMap.put(key,gauges.get(key));
+        if(null != maxwellConfig
+                && null != maxwellConfig.metricRegistry){
+            MetricRegistry metricRegistry = maxwellConfig.metricRegistry;
+            //gauges
+            SortedMap<String, Gauge> gauges = metricRegistry.getGauges();
+            for(String key : gauges.keySet()){
+                gaugesMap.put(key,gauges.get(key));
+            }
+
+            //counters
+            Map<String,Object> countersMap = new HashMap<>();
+            SortedMap<String, Counter> counters = metricRegistry.getCounters();
+            for(String key : counters.keySet()){
+                countersMap.put(key,counters.get(key));
+            }
+            js.put("counters",countersMap);
+
+            //histograms
+            Map<String,Object> histogramsMap = new HashMap<>();
+            SortedMap<String, Histogram> histograms = metricRegistry.getHistograms();
+            for(String key : histograms.keySet()){
+                histogramsMap.put(key,histograms.get(key));
+            }
+            js.put("histograms",histogramsMap);
+
+            //meters
+            Map<String,Object> metersMap = new HashMap<>();
+            SortedMap<String, Meter> meters = metricRegistry.getMeters();
+            for(String key : meters.keySet()){
+                metersMap.put(key,meters.get(key));
+            }
+            js.put("meters",metersMap);
+
+            //timers
+            Map<String,Object> timersMap = new HashMap<>();
+            SortedMap<String, Timer> timers = metricRegistry.getTimers();
+            for(String key : timers.keySet()){
+                timersMap.put(key,timers.get(key));
+            }
+            js.put("timers",timersMap);
         }
+
+        //内存信息
+        MemoryMXBean mxBean = ManagementFactory.getMemoryMXBean();
+        //已分配内存
+        gaugesMap.put("MaxwellMetrics.jvm.memory_usage.total.init",
+                (Gauge<Long>) () -> mxBean.getHeapMemoryUsage().getInit() + mxBean.getNonHeapMemoryUsage().getInit());
+        //已经分配内存
+        gaugesMap.put("MaxwellMetrics.jvm.memory_usage.total.used",
+                (Gauge<Long>) () -> mxBean.getHeapMemoryUsage().getUsed() + mxBean.getNonHeapMemoryUsage().getUsed());
+        //可以获得最大内存
+        gaugesMap.put("MaxwellMetrics.jvm.memory_usage.total.max",
+                (Gauge<Long>) () -> mxBean.getHeapMemoryUsage().getMax() + mxBean.getNonHeapMemoryUsage().getMax());
+
         js.put("gauges",gaugesMap);
 
-        //counters
-        Map<String,Object> countersMap = new HashMap<>();
-        SortedMap<String, Counter> counters = metricRegistry.getCounters();
-        for(String key : counters.keySet()){
-            countersMap.put(key,counters.get(key));
-        }
-        js.put("counters",countersMap);
-
-
-        //histograms
-        Map<String,Object> histogramsMap = new HashMap<>();
-        SortedMap<String, Histogram> histograms = metricRegistry.getHistograms();
-        for(String key : histograms.keySet()){
-            histogramsMap.put(key,histograms.get(key));
-        }
-        js.put("histograms",histogramsMap);
-
-        //meters
-        Map<String,Object> metersMap = new HashMap<>();
-        SortedMap<String, Meter> meters = metricRegistry.getMeters();
-        for(String key : meters.keySet()){
-            metersMap.put(key,meters.get(key));
-        }
-        js.put("meters",metersMap);
-
-        //timers
-        Map<String,Object> timersMap = new HashMap<>();
-        SortedMap<String, Timer> timers = metricRegistry.getTimers();
-        for(String key : timers.keySet()){
-            timersMap.put(key,timers.get(key));
-        }
-        js.put("timers",timersMap);
-
         return new JsonResult<>(js);
+    }
+
+    public boolean getMaxwellStatus() {
+        return maxwellStatus;
     }
 }

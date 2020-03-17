@@ -1,8 +1,8 @@
 package com.puyoma.maxwell.service;
 
+import com.google.common.base.Strings;
 import com.puyoma.maxwell.config.MaxwellBootConfig;
 import com.puyoma.maxwell.util.JsonResult;
-import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ public class ConfigService {
 
     public JsonResult<String> getConfig(){
         String path = maxwellBootConfig.getConfigPath();
-        if(Strings.isBlank(path)){
+        if(Strings.isNullOrEmpty(path)){
             return JsonResult.failure("请先配置config.properties 地址...");
         }
         StringBuffer sbf = new StringBuffer();
@@ -45,7 +45,7 @@ public class ConfigService {
 
     public JsonResult<String> editConfig(String content){
         String filePath = maxwellBootConfig.getConfigPath();
-        if(Strings.isBlank(filePath)){
+        if(Strings.isNullOrEmpty(filePath)){
             return JsonResult.failure("请先配置config.properties 地址...");
         }
 

@@ -1,13 +1,34 @@
 <div class="main-plane">
-    <el-form  label-position="left" ref="form" :model="form" label-width="100px">
-        <el-form-item label="maxwell启停">
-            <el-switch
-                    v-model="form.value"
-                    active-color="#13ce66"
-                    inactive-color="#ff4949" @change="startEvent">
-            </el-switch>
-        </el-form-item>
-    </el-form>
+    <el-row >
+        <el-col :span="12" >
+            <el-form  label-position="left" ref="form" :model="form" label-width="100px" size="mini">
+                <el-form-item>
+                    <span slot="label">启动参数
+                        <el-popover
+                                ref="popover"
+                                placement="right"
+                                title=""
+                                width="200"
+                                trigger="hover"
+                                style="font-size: 12px;">
+                            maxwell启动参数，优先级比配置文件里的参数高
+                        </el-popover>
+                        <el-button v-popover:popover type="text" icon="el-icon-info" class="label"></el-button>
+                    </span>
+                    <el-input type="textarea"
+                              v-model="form.args"
+                              :autosize="{ minRows: 5, maxRows: 10}"></el-input>
+                </el-form-item>
+                <el-form-item label="maxwell启停">
+                    <el-switch
+                            v-model="form.value"
+                            active-color="#13ce66"
+                            inactive-color="#ff4949" @change="startEvent">
+                    </el-switch>
+                </el-form-item>
+            </el-form>
+        </el-col>
+    </el-row>
 </div>
 
 

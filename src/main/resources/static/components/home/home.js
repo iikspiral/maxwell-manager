@@ -15,6 +15,7 @@ define([
                 chart:null,
                 kafkaMonitorChart:null,
                 memoryUsageMonitorChart:null,
+                memoryMonitorChart:null,
                 counters:[
                     { country: '成功发送到kafka的消息数量', population: 0 },
                     { country: '已处理的binlog行数', population: 0 },
@@ -23,6 +24,11 @@ define([
                 memoryUsageData:[
                     { type: '内存使用', value: 0 },
                     { type: '剩余内存', value: 0 }
+                ],
+                memoryData:[
+                    { type: '最大内存', value: 0 },
+                    { type: '可以使用内存', value: 0 },
+                    { type: '已经使用内存', value: 0 }
                 ]
             }
         },
@@ -33,9 +39,56 @@ define([
             //内存使用信息
             this.initMemoryUsageMonitor();
 
+            //内存使用信息
+            this.initMemoryMonitor();
+
             this.getMonitorData();
         },
         methods: {
+            initMemoryMonitor(){
+                const chart = new G2.Chart({
+                    container: 'memoryContainer',
+                    autoFit: true,
+                    height: 245,
+                });
+                chart.data(this.memoryData);
+                chart.scale('population', {
+                    alias: '内存(兆)',
+                    nice: true
+                });
+                chart.axis('type', {
+                    tickLine: null,
+                });
+
+                chart.axis('value', {
+                    label: {
+                        formatter: (val) => {
+                            return val+'v';
+                        },
+                    },
+                });
+
+                chart.tooltip({
+                    showMarkers: false,
+                });
+                chart.interaction('element-active');
+
+                chart.legend(false);
+                chart
+                    .interval()
+                    .position('type*value')
+                    .label('value', {
+                        content: (originData) => {
+                            return originData.value + 'M';
+                        },
+                        offset: 10,
+                    });
+
+                chart.render();
+                this.memoryMonitorChart = chart;
+
+            },
+
             /**
              * 初始化kafka监控信息
              */
@@ -69,6 +122,11 @@ define([
                 });
                 chart.data(this.memoryUsageData);
                 chart.legend(false);
+
+                chart.scale('value', {
+                    alias: '内存(兆)',
+                    nice: true
+                });
                 chart.coordinate('theta', {
                     radius: 0.75,
                 });
@@ -119,20 +177,33 @@ define([
                             var data = response.data.data;
 
                             //处理kafka 统计信息
-                            var counters = [];
-                            counters.push({ country: '已处理的binlog行数', population: data.counters['MaxwellMetrics.row.count'].count});
-                            counters.push({ country: '成功发送到kafka的消息数量', population: data.counters['MaxwellMetrics.messages.succeeded'].count});
-                            counters.push({ country: '发送失败的消息数量', population: data.counters['MaxwellMetrics.messages.failed'].count});
-                            _this.counters = counters;
+                            if(data.counters){
+                                var counters = [];
+                                counters.push({ country: '已处理的binlog行数', population: data.counters['MaxwellMetrics.row.count'].count});
+                                counters.push({ country: '成功发送到kafka的消息数量', population: data.counters['MaxwellMetrics.messages.succeeded'].count});
+                                counters.push({ country: '发送失败的消息数量', population: data.counters['MaxwellMetrics.messages.failed'].count});
+                                _this.counters = counters;
+                            }
 
-                            //处理内存使用
-                            var memoryUsageData = [];
-                            var maxVal = data.gauges['MaxwellMetrics.jvm.memory_usage.total.max'].value;
-                            var usedVal = data.gauges['MaxwellMetrics.jvm.memory_usage.total.used'].value;
-                            var val = Number((usedVal/maxVal).toFixed(3));
-                            memoryUsageData.push({ type: '内存使用', value: val});
-                            memoryUsageData.push({ type: '剩余内存', value: Number((1 - val).toFixed(3))});
-                            _this.memoryUsageData = memoryUsageData;
+                            if(data.gauges){
+                                //处理内存使用
+                                var memoryUsageData = [];
+                                var maxVal = data.gauges['MaxwellMetrics.jvm.memory_usage.total.max'].value;
+                                var usedVal = data.gauges['MaxwellMetrics.jvm.memory_usage.total.used'].value;
+                                var val = Number(((usedVal/maxVal) * 100).toFixed(3));
+                                memoryUsageData.push({ type: '内存使用', value: val});
+                                memoryUsageData.push({ type: '剩余内存', value: 100 - val});
+                                _this.memoryUsageData = memoryUsageData;
+
+                                var memoryData = [];
+                                var val = data.gauges['MaxwellMetrics.jvm.memory_usage.total.max'].value;
+                                memoryData.push({ type: '最大内存', value: Number((val/(1024*1024)).toFixed(0)) });
+                                val = data.gauges['MaxwellMetrics.jvm.memory_usage.total.init'].value;
+                                memoryData.push({ type: '可以使用内存', value: Number((val/(1024*1024)).toFixed(0)) });
+                                val = data.gauges['MaxwellMetrics.jvm.memory_usage.total.used'].value;
+                                memoryData.push({ type: '已经使用内存', value: Number((val/(1024*1024)).toFixed(0)) });
+                                _this.memoryData = memoryData;
+                            }
                         }
                         NProgress.done();
                     });
@@ -156,6 +227,11 @@ define([
             memoryUsageData(){
                 this.memoryUsageMonitorChart.data(this.memoryUsageData);
                 this.memoryUsageMonitorChart.render();
+            },
+
+            memoryData(){
+                this.memoryMonitorChart.data(this.memoryData);
+                this.memoryMonitorChart.render();
             }
         }
     });

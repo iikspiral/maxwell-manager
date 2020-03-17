@@ -1,34 +1,39 @@
-<div class="main-plane">
-    <el-tabs v-model="activeName" @tab-click="handleClick">
-        <el-tab-pane name="first">
-            <span slot="label"><i class="el-icon-date"></i> 表格</span>
-            <el-table
-                    :data="tableData"
-                    border
-                    style="width: 100%">
-                <el-table-column
-                        prop="date"
-                        label="日期"
-                        width="180">
-                </el-table-column>
-                <el-table-column
-                        prop="name"
-                        label="姓名"
-                        width="180">
-                </el-table-column>
-                <el-table-column
-                        prop="address"
-                        label="地址">
-                </el-table-column>
-            </el-table>
-        </el-tab-pane>
-        <el-tab-pane name="second">
-            <span slot="label"><i class="el-icon-edit"></i> 文字</span>
-            <pre id="code" class="ace_editor" style="min-height:400px"><textarea class="ace_text-input">
-         </textarea></pre>
-        </el-tab-pane>
-        <el-tab-pane label="历史" name="third">历史</el-tab-pane>
-    </el-tabs>
+<div class="filter-main">
+    <el-row :gutter="24" class="filter-head" style="margin: 0px;">
+        <el-col :span="22" >
+            <el-button type="success" size="mini" icon="el-icon-edit" v-if="isReadOnly" @click="isReadOnly = false">编辑</el-button>
+            <el-button size="mini" icon="el-icon-check" v-if="!isReadOnly" @click="onSubmit">保存</el-button>
+            <el-popover
+                    class="help-popover"
+                    placement="top-start"
+                    title="标题"
+                    width="400"
+                    trigger="hover"
+                    content="如果您需要本机过滤器无法提供的更多灵活性，则可以编写一小段JavaScript，让Maxwell通过传递每一行--javascript FILE。此文件应至少包含一个名为的JavaScript函数process_row。该函数将被传递给一个WrappedRowMap 对象，并且可以自由地进行过滤和数据处理决定.这里有一个更长的示例：">
+                <el-button type="text" icon="el-icon-info" slot="reference"></el-button>
+            </el-popover>
+        </el-col>
+    </el-row>
+
+    <el-row style="margin-top: 10px;">
+        <el-alert
+                v-if="isReadOnly"
+                title="当前js配置文件不可编辑,若要修改请点击编辑按钮。"
+                type="warning"
+                show-icon
+                :closable="false">
+        </el-alert>
+    </el-row>
+
+    <el-row style="margin-top: 10px;">
+        <el-row :gutter="24">
+            <el-col :span="5" >
+                <span class="javascript-tag">javascript</span>
+            </el-col>
+        </el-row>
+        <pre id="code" class="ace_editor" style="min-height:400px">
+            <textarea class="ace_text-input"></textarea>
+        </pre>
+        <el-row style="background-color:#337AB7;height:10px"></el-row>
+    </el-row>
 </div>
-
-

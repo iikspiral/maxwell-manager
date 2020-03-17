@@ -7,7 +7,11 @@
                 <el-col :offset="10" class="title">内存使用统计</el-col>
             </el-row>
         </el-col>
-        <el-col :span="12">
+        <el-col :span="8" :offset="2">
+            <div id="memoryContainer"></div>
+            <el-row :gutter="24">
+                <el-col :offset="10" class="title">内存使用情况</el-col>
+            </el-row>
         </el-col>
     </el-row>
     <el-row :gutter="24" class="row">

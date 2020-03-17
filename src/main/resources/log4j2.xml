@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" packages="org.apache.logging.log4j.core,io.sentry.log4j2,com.puyoma.maxwell.log">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_ERR">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS}  %5.5p ${PID:- } --- [%15.15t]  %-40.40c  : %5m%n"/>
+    </Console>
+    <!-- 这个就是自定义的Appender -->
+    <Log4j2Appender name="CustomAppender">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS}  %5.5p ${PID:- } --- [%15.15t]  %-40.40c  : %5m%n"/>
+    </Log4j2Appender>
+
+  </Appenders>
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="Console"/>
+      <appender-ref ref="CustomAppender"/>
+    </Root>
+    <Logger name="com.zendesk.maxwell" level="info" additivity="false">
+      <AppenderRef ref="Console"/>
+      <!-- 注册到全局 appender -->
+      <appender-ref ref="CustomAppender"/>
+    </Logger>
+    <Logger name="snaq.db.ConnectionPool.RawMaxwellConnectionPool" level="off" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="snaq.db.ConnectionPool.MaxwellConnectionPool" level="off" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="snaq.db.ConnectionPool.ReplicationConnectionPool" level="off" additivity="false">
+      <AppenderRef ref="Console"/>
+    </Logger>
+  </Loggers>
+</Configuration>

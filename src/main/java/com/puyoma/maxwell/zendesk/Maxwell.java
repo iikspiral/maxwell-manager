@@ -1,6 +1,5 @@
-package com.puyoma.maxwell.util;
+package com.puyoma.maxwell.zendesk;
 
-import com.zendesk.maxwell.Maxwell;
 import com.zendesk.maxwell.MaxwellConfig;
 import com.zendesk.maxwell.MaxwellContext;
 import com.zendesk.maxwell.MaxwellMysqlStatus;
@@ -20,17 +19,17 @@ import java.sql.SQLException;
 /**
  * @author: create by dawei
  * @version: v1.0
- * @description: com.puyoma.maxwell.util
- * @date:2020/1/18
+ * @description: com.puyoma.maxwell.zendesk
+ * @date:2020/3/11
  */
-public class MaxwellApp extends Maxwell {
-    static final Logger LOGGER = LoggerFactory.getLogger(MaxwellApp.class);
+public class Maxwell extends com.zendesk.maxwell.Maxwell {
+    static final Logger LOGGER = LoggerFactory.getLogger(Maxwell.class);
 
-    public MaxwellApp(MaxwellConfig config) throws SQLException, URISyntaxException {
+    public Maxwell(MaxwellConfig config) throws SQLException, URISyntaxException {
         super(config);
     }
 
-    protected MaxwellApp(MaxwellContext context) throws SQLException, URISyntaxException {
+    protected Maxwell(MaxwellContext context) throws SQLException, URISyntaxException {
         super(context);
     }
 

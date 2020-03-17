@@ -5,53 +5,82 @@
     <title>maxwell</title>
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico"/>
-    <script src="/lib/require/require.js" data-main="/require.config" async="true" defer></script>
 </head>
 <body v-loading="loading">
-<el-container id="app">
-    <el-header>
-        <el-menu
-                class="el-menu-demo"
-                mode="horizontal"
-                background-color="#545c64"
-                text-color="#fff"
-                active-text-color="#ffd04b">
-            <el-menu-item index="2" class="title">
-                <img :src="logo_src" class="logo_img"/>
-            </el-menu-item>
-        </el-menu>
-    </el-header>
-    <el-container>
-        <el-aside width="200px">
-            <el-menu class="el-menu-vertical-demo"
-                    style="height: 700px;"
-                    router="true"
-                    :default-active="$route.path">
-                <template v-for="menu in menus">
-                    <el-menu-item v-if="!menu.children" :index="menu.path">
-                        <i :class="menu.icoClass"></i>
-                        <span slot="title">{{menu.name}}</span>
-                    </el-menu-item>
-                    <el-submenu v-if="menu.children" :index="menu.path">
-                        <template slot="title">
+    <el-container id="app">
+        <el-header class="header-top">
+            <el-row>
+                <el-col :span="22">
+                    <img :src="logo_src" class="logo_img"/>
+                </el-col>
+                <el-col :span="2">
+                    <el-tooltip class="item" effect="dark" content="实时日志" placement="top-start">
+                        <el-button icon="el-icon-tickets"
+                                   type="text"
+                                   style="color: white;font-size: 20px;"
+                                    @click="logDialogVisible = true"></el-button>
+                    </el-tooltip>
+                </el-col>
+            </el-row>
+        </el-header>
+        <el-container>
+            <el-aside width="200px">
+                <el-menu class="el-menu-vertical-demo"
+                        style="height: 700px;"
+                        router="true"
+                        :default-active="$route.path">
+                    <template v-for="menu in menus">
+                        <el-menu-item v-if="!menu.children" :index="menu.path">
                             <i :class="menu.icoClass"></i>
-                            <span>{{menu.name}}</span>
-                        </template>
-                        <el-menu-item v-for="item in menu.children" :index="item.path">{{item.name}}</el-menu-item>
-                    </el-submenu>
-                </template>
-            </el-menu>
-        </el-aside>
-        <el-main class="main-container">
-            <el-breadcrumb separator="/" class="breadcrumb">
-                <el-breadcrumb-item v-if="homeLabel" :to="{ path: '/' }">{{homeLabel}}</el-breadcrumb-item>
-                <template v-if="breadcrumbs && breadcrumbs.length > 0">
-                    <el-breadcrumb-item v-for="item in breadcrumbs">{{item}}</el-breadcrumb-item>
-                </template>
-            </el-breadcrumb>
-            <router-view class="main-view"></router-view>
-        </el-main>
+                            <span slot="title">{{menu.name}}</span>
+                        </el-menu-item>
+                        <el-submenu v-if="menu.children" :index="menu.path">
+                            <template slot="title">
+                                <i :class="menu.icoClass"></i>
+                                <span>{{menu.name}}</span>
+                            </template>
+                            <el-menu-item v-for="item in menu.children" :index="item.path">{{item.name}}</el-menu-item>
+                        </el-submenu>
+                    </template>
+                </el-menu>
+            </el-aside>
+            <el-main class="main-container">
+                <el-breadcrumb separator="/" class="breadcrumb">
+                    <el-breadcrumb-item v-if="homeLabel" :to="{ path: '/' }" >
+                        <span v-html="homeLabel"></span>
+                    </el-breadcrumb-item>
+                    <template v-if="breadcrumbs && breadcrumbs.length > 0">
+                        <el-breadcrumb-item v-for="item in breadcrumbs">{{item}}</el-breadcrumb-item>
+                    </template>
+                </el-breadcrumb>
+                <router-view class="main-view"></router-view>
+            </el-main>
+        </el-container>
+        <div class="dialog">
+            <el-dialog
+                    title="日志"
+                    top="30px"
+                    :visible.sync="logDialogVisible"
+                    @open="logHandleOpen"
+                    @close="logHandleClose"
+                    close-on-click-modal="false"
+                    width="80%">
+                <div class="logContent">
+                    <template v-if="logs.length > 0">
+                        <el-row v-for="log in logs">
+                            <span>{{log.timestamp}}</span>
+                            <span>{{log.level}}</span>
+                            <span>  --- </span>
+                            <span>[{{log.threadName}}]</span>
+                            <span>{{log.className}}</span>
+                            <span> : {{log.body}}</span>
+                        </el-row>
+                    </template>
+                </div>
+                </span>
+            </el-dialog>
+        </div>
     </el-container>
-</el-container>
+    <script src="/lib/require/require.js" data-main="/require.config" async="true" defer></script>
 </body>
 </html>

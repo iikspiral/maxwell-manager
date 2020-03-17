@@ -1,5 +1,7 @@
 package com.puyoma.maxwell.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +12,7 @@ import java.util.Map;
  * @date:2020/3/7
  */
 public class UtilTools {
+    private static Logger LOGGER = LoggerFactory.getLogger(UtilTools.class);
 
     public static Map<String,String> getCommandMap(){
         //获取输入变量
