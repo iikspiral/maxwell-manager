@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_191" class="java.beans.XMLDecoder">
+ <object class="java.util.concurrent.ConcurrentHashMap">
+  <void method="put">
+   <string>maxwell.status</string>
+   <boolean>false</boolean>
+  </void>
+  <void method="put">
+   <string>maxwell.startUp.args</string>
+   <array class="java.lang.String" length="1">
+    <void index="0">
+     <string>--javascript=/usr/local/resource/bomc/code/maxwell-manage/src/main/resources/filter.js</string>
+    </void>
+   </array>
+  </void>
+ </object>
+</java>
