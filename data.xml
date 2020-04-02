@@ -3,7 +3,7 @@
  <object class="java.util.concurrent.ConcurrentHashMap">
   <void method="put">
    <string>maxwell.status</string>
-   <boolean>false</boolean>
+   <boolean>true</boolean>
   </void>
   <void method="put">
    <string>maxwell.startUp.args</string>

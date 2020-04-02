@@ -5,10 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,11 +22,14 @@ public class CacheUtil {
 
     static {
         //恢复持久化的map
-        try (XMLDecoder xmlDecoder = new XMLDecoder(
-                new BufferedInputStream(new FileInputStream("data.xml")))){
-            cacheManage = (Map<String,Object>)xmlDecoder.readObject();
-        }catch (Exception e){
-            logger.warn(e.getMessage());
+        File file = new File("data.xml");
+        if(file.exists()){
+            try (XMLDecoder xmlDecoder = new XMLDecoder(
+                    new BufferedInputStream(new FileInputStream(file)))){
+                cacheManage = (Map<String,Object>)xmlDecoder.readObject();
+            }catch (Exception e){
+                logger.error("",e);
+            }
         }
     }
 

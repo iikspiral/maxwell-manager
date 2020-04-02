@@ -1,10 +1,12 @@
 package com.puyoma.maxwell.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.puyoma.maxwell.config.MaxwellBootConfig;
 import com.puyoma.maxwell.entity.Bootstrap;
 import com.puyoma.maxwell.entity.Databases;
 import com.puyoma.maxwell.entity.Tables;
 import com.puyoma.maxwell.service.MaxwellService;
+import com.puyoma.maxwell.util.CacheUtil;
 import com.puyoma.maxwell.util.JsonResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +54,7 @@ public class GeneralController {
         try{
             //todo
             maxwellService.stop();
+            CacheUtil.putCache(MaxwellBootConfig.MAXWELL_STATUS,false);
             return JsonResult.success("服务关闭成功");
         }catch (Exception e){
             logger.error("",e);

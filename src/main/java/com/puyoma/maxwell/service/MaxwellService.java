@@ -119,20 +119,31 @@ public class MaxwellService {
      * maxwell 服务启动
      * @return
      */
+    public boolean start(){
+        return start(null);
+    }
+
+    /**
+     * maxwell 服务启动
+     * @return
+     */
     public boolean start(Map<String,Object> argsMap){
         try{
-            //本地持久化
-            String args = argsMap.get("args").toString();
-            if(!Strings.isNullOrEmpty(args)){
-                List<String> list = new ArrayList<>();
-                for(String opt : args.trim().split("--")){
-                    if(opt.contains("=")){
-                        list.add("--"+opt.trim());
-                    }
-                }
-                CacheUtil.putCache(MaxwellBootConfig.MAXWELL_START_UP_ARGS,list.toArray(new String[]{}));
-            }
             logger.info("maxwell 正在启动中...");
+            //本地持久化
+            if(null != argsMap
+                    && argsMap.containsKey("args")){
+                String args = argsMap.get("args").toString();
+                if(!Strings.isNullOrEmpty(args)){
+                    List<String> list = new ArrayList<>();
+                    for(String opt : args.trim().split("--")){
+                        if(opt.contains("=")){
+                            list.add("--"+opt.trim());
+                        }
+                    }
+                    CacheUtil.putCache(MaxwellBootConfig.MAXWELL_START_UP_ARGS,list.toArray(new String[]{}));
+                }
+            }
 
             Logging.setupLogBridging();
             maxwellConfig = initMaxwellConfig();
@@ -162,7 +173,6 @@ public class MaxwellService {
         maxwell.stop();
         maxwellConfig = null;
         maxwellStatus = false;
-        CacheUtil.putCache(MaxwellBootConfig.MAXWELL_STATUS,false);
         logger.info("maxwell 已关闭!");
     }
 
