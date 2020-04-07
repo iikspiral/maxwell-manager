@@ -3,7 +3,6 @@ package com.puyoma.maxwell.service;
 import com.alibaba.fastjson.JSONObject;
 import com.codahale.metrics.*;
 import com.codahale.metrics.Timer;
-import com.google.api.client.util.ArrayMap;
 import com.google.common.base.Strings;
 import com.puyoma.maxwell.config.MaxwellBootConfig;
 import com.puyoma.maxwell.dao.BootstrapDao;
@@ -203,7 +202,7 @@ public class MaxwellService {
      */
     public Map<String,Map<String,List<Bootstrap>>> queryBootstrap(String startTime,String endTime,String dbName,String tableNames){
 
-        Map<String,Object> paramMap = new ArrayMap<>();
+        Map<String,Object> paramMap = new HashMap<>();
         paramMap.put("startTime",startTime);
         paramMap.put("endTime",endTime);
         paramMap.put("databaseName",dbName);

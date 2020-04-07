@@ -1,58 +1,341 @@
-package com.puyoma.maxwell.zendesk;
+package com.zendesk.maxwell;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheckRegistry;
 import com.github.shyiko.mysql.binlog.network.SSLMode;
-import com.google.common.base.Strings;
-import com.zendesk.maxwell.MaxwellMysqlConfig;
 import com.zendesk.maxwell.filtering.Filter;
 import com.zendesk.maxwell.filtering.InvalidFilterException;
 import com.zendesk.maxwell.monitoring.MaxwellDiagnosticContext;
 import com.zendesk.maxwell.producer.EncryptionMode;
+import com.zendesk.maxwell.producer.MaxwellOutputConfig;
+import com.zendesk.maxwell.producer.ProducerFactory;
 import com.zendesk.maxwell.replication.BinlogPosition;
 import com.zendesk.maxwell.replication.Position;
 import com.zendesk.maxwell.scripting.Scripting;
+import com.zendesk.maxwell.util.AbstractConfig;
+import joptsimple.BuiltinHelpFormatter;
+import joptsimple.OptionDescriptor;
+import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
+import java.util.regex.Pattern;
 
-/**
- * @author: create by dawei
- * @version: v1.0
- * @description: com.puyoma.maxwell.zendesk
- * @date:2020/3/11
- */
-public class MaxwellConfig extends com.zendesk.maxwell.MaxwellConfig {
+public class MaxwellConfig extends AbstractConfig {
     static final Logger LOGGER = LoggerFactory.getLogger(MaxwellConfig.class);
 
-    public MaxwellConfig(String argv[],String source) throws Exception {
-        super();
-        this.parse(argv,source);
+    public static final String GTID_MODE_ENV = "GTID_MODE";
+
+    public MaxwellMysqlConfig replicationMysql;
+    public MaxwellMysqlConfig schemaMysql;
+
+    public MaxwellMysqlConfig maxwellMysql;
+    public Filter filter;
+    public Boolean gtidMode;
+
+    public String databaseName;
+
+    public String includeDatabases, excludeDatabases, includeTables, excludeTables, excludeColumns, blacklistDatabases, blacklistTables, includeColumnValues;
+    public String filterList;
+
+    public ProducerFactory producerFactory; // producerFactory has precedence over producerType
+    public final Properties customProducerProperties;
+    public String producerType;
+
+    public final Properties kafkaProperties;
+    public String kafkaTopic;
+    public String deadLetterTopic;
+    public String ddlKafkaTopic;
+    public String kafkaKeyFormat;
+    public String kafkaPartitionHash;
+    public String kafkaPartitionKey;
+    public String kafkaPartitionColumns;
+    public String kafkaPartitionFallback;
+    public String bootstrapperType;
+    public int bufferedProducerSize;
+
+    public String producerPartitionKey;
+    public String producerPartitionColumns;
+    public String producerPartitionFallback;
+
+    public String kinesisStream;
+    public boolean kinesisMd5Keys;
+
+    public String sqsQueueUri;
+
+    public String pubsubProjectId;
+    public String pubsubTopic;
+    public String ddlPubsubTopic;
+
+    public Long producerAckTimeout;
+
+    public String outputFile;
+    public MaxwellOutputConfig outputConfig;
+    public String log_level;
+
+    public MetricRegistry metricRegistry;
+    public HealthCheckRegistry healthCheckRegistry;
+
+    public int httpPort;
+    public String httpBindAddress;
+    public String httpPathPrefix;
+    public String metricsPrefix;
+    public String metricsReportingType;
+    public Long metricsSlf4jInterval;
+    public String metricsDatadogType;
+    public String metricsDatadogTags;
+    public String metricsDatadogAPIKey;
+    public String metricsDatadogHost;
+    public int metricsDatadogPort;
+    public Long metricsDatadogInterval;
+    public boolean metricsJvm;
+
+    public MaxwellDiagnosticContext.Config diagnosticConfig;
+
+    public String clientID;
+    public Long replicaServerID;
+
+    public Position initPosition;
+    public boolean replayMode;
+    public boolean masterRecovery;
+    public boolean ignoreProducerError;
+    public boolean recaptureSchema;
+
+    public String rabbitmqUser;
+    public String rabbitmqPass;
+    public String rabbitmqHost;
+    public int rabbitmqPort;
+    public String rabbitmqVirtualHost;
+    public String rabbitmqExchange;
+    public String rabbitmqExchangeType;
+    public boolean rabbitMqExchangeDurable;
+    public boolean rabbitMqExchangeAutoDelete;
+    public String rabbitmqRoutingKeyTemplate;
+    public boolean rabbitmqMessagePersistent;
+    public boolean rabbitmqDeclareExchange;
+
+    public String redisHost;
+    public int redisPort;
+    public String redisAuth;
+    public int redisDatabase;
+    public String redisPubChannel;
+    public String redisListKey;
+    public String redisType;
+    public String javascriptFile;
+    public Scripting scripting;
+
+    public MaxwellConfig() throws Exception { // argv is only null in tests
+        this.customProducerProperties = new Properties();
+        this.kafkaProperties = new Properties();
+        this.replayMode = false;
+        this.replicationMysql = new MaxwellMysqlConfig();
+        this.maxwellMysql = new MaxwellMysqlConfig();
+        this.schemaMysql = new MaxwellMysqlConfig();
+        this.masterRecovery = false;
+        this.gtidMode = false;
+        this.bufferedProducerSize = 200;
+        this.metricRegistry = new MetricRegistry();
+        this.healthCheckRegistry = new HealthCheckRegistry();
+        this.outputConfig = new MaxwellOutputConfig();
+        setup(null, null); // setup defaults
     }
 
+    public MaxwellConfig(String argv[]) throws Exception {
+        this();
+        this.parse(argv);
+    }
 
-    private void parse(String [] argv,String source) throws Exception {
+    protected OptionParser buildOptionParser() {
+        final OptionParser parser = new OptionParser();
+        parser.accepts( "config", "location of config file" ).withRequiredArg();
+        parser.accepts( "env_config_prefix", "prefix of env var based config, case insensitive" ).withRequiredArg();
+        parser.accepts( "log_level", "log level, one of DEBUG|INFO|WARN|ERROR" ).withRequiredArg();
+        parser.accepts( "daemon", "daemon, running maxwell as a daemon" ).withOptionalArg();
+
+        parser.accepts("__separator_1");
+
+        parser.accepts( "host", "mysql host with write access to maxwell database" ).withRequiredArg();
+        parser.accepts( "port", "port for host" ).withRequiredArg();
+        parser.accepts( "user", "username for host" ).withRequiredArg();
+        parser.accepts( "password", "password for host" ).withRequiredArg();
+        parser.accepts( "jdbc_options", "additional jdbc connection options" ).withRequiredArg();
+        parser.accepts( "binlog_connector", "[deprecated]" ).withRequiredArg();
+
+        parser.accepts( "ssl", "enables SSL for all connections: DISABLED|PREFERRED|REQUIRED|VERIFY_CA|VERIFY_IDENTITY. default: DISABLED").withOptionalArg();
+        parser.accepts( "replication_ssl", "overrides SSL setting for binlog connection: DISABLED|PREFERRED|REQUIRED|VERIFY_CA|VERIFY_IDENTITY").withOptionalArg();
+        parser.accepts( "schema_ssl", "overrides SSL setting for schema capture connection: DISABLED|PREFERRED|REQUIRED|VERIFY_CA|VERIFY_IDENTITY").withOptionalArg();
+
+        parser.accepts("__separator_2");
+
+        parser.accepts( "replication_host", "mysql host to replicate from (if using separate schema and replication servers)" ).withRequiredArg();
+        parser.accepts( "replication_user", "username for replication_host" ).withRequiredArg();
+        parser.accepts( "replication_password", "password for replication_host" ).withRequiredArg();
+        parser.accepts( "replication_port", "port for replication_host" ).withRequiredArg();
+
+        parser.accepts( "schema_host", "overrides replication_host for retrieving schema" ).withRequiredArg();
+        parser.accepts( "schema_user", "username for schema_host" ).withRequiredArg();
+        parser.accepts( "schema_password", "password for schema_host" ).withRequiredArg();
+        parser.accepts( "schema_port", "port for schema_host" ).withRequiredArg();
+
+        parser.accepts("__separator_3");
+
+        parser.accepts( "producer", "producer type: stdout|file|kafka|kinesis|pubsub|sqs|rabbitmq|redis" ).withRequiredArg();
+        parser.accepts( "custom_producer.factory", "fully qualified custom producer factory class" ).withRequiredArg();
+        parser.accepts( "producer_ack_timeout", "producer message acknowledgement timeout" ).withRequiredArg();
+        parser.accepts( "javascript", "file containing per-row javascript to execute" ).withRequiredArg();
+
+        parser.accepts( "output_file", "output file for 'file' producer" ).withRequiredArg();
+
+        parser.accepts( "producer_partition_by", "database|table|primary_key|transaction_id|column, kafka/kinesis producers will partition by this value").withRequiredArg();
+        parser.accepts("producer_partition_columns",
+                "with producer_partition_by=column, partition by the value of these columns.  "
+                        + "comma separated.").withRequiredArg();
+        parser.accepts( "producer_partition_by_fallback", "database|table|primary_key|transaction_id, fallback to this value when using 'column' partitioning and the columns are not present in the row").withRequiredArg();
+
+        parser.accepts( "kafka_version", "kafka client library version: 0.8.2.2|0.9.0.1|0.10.0.1|0.10.2.1|0.11.0.1|1.0.0").withRequiredArg();
+        parser.accepts( "kafka_partition_by", "[deprecated]").withRequiredArg();
+        parser.accepts( "kafka_partition_columns", "[deprecated]").withRequiredArg();
+        parser.accepts( "kafka_partition_by_fallback", "[deprecated]").withRequiredArg();
+        parser.accepts( "kafka.bootstrap.servers", "at least one kafka server, formatted as HOST:PORT[,HOST:PORT]" ).withRequiredArg();
+        parser.accepts( "kafka_partition_hash", "default|murmur3, hash function for partitioning" ).withRequiredArg();
+        parser.accepts( "kafka_topic", "optionally provide a topic name to push to. default: maxwell" ).withRequiredArg();
+        parser.accepts( "dead_letter_topic", "the topic to write to when publishing to the initial topic is not possible, for example RecordTooLargeException for kafka" ).withRequiredArg();
+        parser.accepts( "kafka_key_format", "how to format the kafka key; array|hash" ).withRequiredArg();
+
+        parser.accepts( "kinesis_stream", "kinesis stream name" ).withOptionalArg();
+        parser.accepts( "sqs_queue_uri", "SQS Queue uri" ).withRequiredArg();
+
+        parser.accepts( "pubsub_project_id", "provide a google cloud platform project id associated with the pubsub topic" ).withRequiredArg();
+        parser.accepts( "pubsub_topic", "optionally provide a pubsub topic to push to. default: maxwell" ).withRequiredArg();
+        parser.accepts( "ddl_pubsub_topic", "optionally provide an alternate pubsub topic to push DDL records to. default: pubsub_topic" ).withRequiredArg();
+
+        parser.accepts("__separator_4");
+
+        parser.accepts( "output_binlog_position", "produced records include binlog position; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_gtid_position", "produced records include gtid position; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_commit_info", "produced records include commit and xid; [true|false]. default: true" ).withOptionalArg();
+        parser.accepts( "output_xoffset", "produced records include xoffset, option \"output_commit_info\" must be enabled; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_nulls", "produced records include fields with NULL values [true|false]. default: true" ).withOptionalArg();
+        parser.accepts( "output_server_id", "produced records include server_id; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_thread_id", "produced records include thread_id; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_schema_id", "produced records include schema_id; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_row_query", "produced records include query, binlog option \"binlog_rows_query_log_events\" must be enabled; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_primary_keys", "produced DML records include list of values that make up a row's primary key; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_primary_key_columns", "produced DML records include list of columns that make up a row's primary key; [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "output_null_zerodates", "convert '0000-00-00' dates/datetimes to null default: false" ).withOptionalArg();
+        parser.accepts( "output_ddl", "produce DDL records to ddl_kafka_topic [true|false]. default: false" ).withOptionalArg();
+        parser.accepts( "exclude_columns", "suppress these comma-separated columns from output" ).withRequiredArg();
+        parser.accepts( "ddl_kafka_topic", "optionally provide an alternate topic to push DDL records to. default: kafka_topic" ).withRequiredArg();
+        parser.accepts("secret_key", "The secret key for the AES encryption" ).withRequiredArg();
+        parser.accepts("encrypt", "encryption mode: [none|data|all]. default: none" ).withRequiredArg();
+
+        parser.accepts( "__separator_5" );
+
+        parser.accepts( "bootstrapper", "bootstrapper type: async|sync|none. default: async" ).withRequiredArg();
+
+        parser.accepts( "__separator_6" );
+
+        parser.accepts( "replica_server_id", "server_id that maxwell reports to the master.  See docs for full explanation. ").withRequiredArg();
+        parser.accepts( "client_id", "unique identifier for this maxwell replicator" ).withRequiredArg();
+        parser.accepts( "schema_database", "database name for maxwell state (schema and binlog position)" ).withRequiredArg();
+        parser.accepts( "max_schemas", "[deprecated]" ).withRequiredArg();
+        parser.accepts( "init_position", "initial binlog position, given as BINLOG_FILE:POSITION[:HEARTBEAT]" ).withRequiredArg();
+        parser.accepts( "replay", "replay mode, don't store any information to the server" ).withOptionalArg();
+        parser.accepts( "master_recovery", "(experimental) enable master position recovery code" ).withOptionalArg();
+        parser.accepts( "gtid_mode", "(experimental) enable gtid mode" ).withOptionalArg();
+        parser.accepts( "ignore_producer_error", "Maxwell will be terminated on kafka/kinesis errors when false. Otherwise, those producer errors are only logged. Default to true" ).withOptionalArg();
+        parser.accepts( "recapture_schema", "recapture the latest schema" ).withOptionalArg();
+
+        parser.accepts( "__separator_7" );
+
+        parser.accepts( "include_dbs", "[deprecated]" ).withRequiredArg();
+        parser.accepts( "exclude_dbs", "[deprecated]" ).withRequiredArg();
+        parser.accepts( "include_tables", "[deprecated]" ).withRequiredArg();
+        parser.accepts( "exclude_tables", "[deprecated]" ).withRequiredArg();
+        parser.accepts( "blacklist_dbs", "[deprecated]" ).withRequiredArg();
+        parser.accepts( "blacklist_tables", "[deprecated]" ).withRequiredArg();
+        parser.accepts( "filter", "filter specs.  specify like \"include:db.*, exclude:*.tbl, include: foo./.*bar$/, exclude:foo.bar.baz=reject\"").withRequiredArg();
+        parser.accepts( "include_column_values", "[deprecated]" ).withRequiredArg();
+
+        parser.accepts( "__separator_8" );
+
+        parser.accepts( "rabbitmq_user", "Username of Rabbitmq connection. Default is guest" ).withRequiredArg();
+        parser.accepts( "rabbitmq_pass", "Password of Rabbitmq connection. Default is guest" ).withRequiredArg();
+        parser.accepts( "rabbitmq_host", "Host of Rabbitmq machine" ).withRequiredArg();
+        parser.accepts( "rabbitmq_port", "Port of Rabbitmq machine" ).withRequiredArg();
+        parser.accepts( "rabbitmq_virtual_host", "Virtual Host of Rabbitmq" ).withRequiredArg();
+        parser.accepts( "rabbitmq_exchange", "Name of exchange for rabbitmq publisher" ).withRequiredArg();
+        parser.accepts( "rabbitmq_exchange_type", "Exchange type for rabbitmq" ).withRequiredArg();
+        parser.accepts( "rabbitmq_exchange_durable", "Exchange durability. Default is disabled" ).withOptionalArg();
+        parser.accepts( "rabbitmq_exchange_autodelete", "If set, the exchange is deleted when all queues have finished using it. Defaults to false" ).withOptionalArg();
+        parser.accepts( "rabbitmq_routing_key_template", "A string template for the routing key, '%db%' and '%table%' will be substituted. Default is '%db%.%table%'." ).withRequiredArg();
+        parser.accepts( "rabbitmq_message_persistent", "Message persistence. Defaults to false" ).withOptionalArg();
+        parser.accepts( "rabbitmq_declare_exchange", "Should declare the exchange for rabbitmq publisher. Defaults to true" ).withOptionalArg();
+
+        parser.accepts( "__separator_9" );
+
+        parser.accepts( "redis_host", "Host of Redis server" ).withRequiredArg();
+        parser.accepts( "redis_port", "Port of Redis server" ).withRequiredArg();
+        parser.accepts( "redis_auth", "Authentication key for a password-protected Redis server" ).withRequiredArg();
+        parser.accepts( "redis_database", "Database of Redis server" ).withRequiredArg();
+        parser.accepts( "redis_pub_channel", "Redis Pub/Sub channel for publishing records" ).withRequiredArg();
+        parser.accepts( "redis_list_key", "Redis LPUSH List Key for adding to a queue" ).withRequiredArg();
+        parser.accepts( "redis_type", "[pubsub|lpush] Selects either Redis Pub/Sub or LPUSH. Defaults to 'pubsub'" ).withRequiredArg();
+
+        parser.accepts( "__separator_10" );
+
+        parser.accepts( "metrics_prefix", "the prefix maxwell will apply to all metrics" ).withRequiredArg();
+        parser.accepts( "metrics_type", "how maxwell metrics will be reported, at least one of slf4j|jmx|http|datadog" ).withRequiredArg();
+        parser.accepts( "metrics_slf4j_interval", "the frequency metrics are emitted to the log, in seconds, when slf4j reporting is configured" ).withRequiredArg();
+        parser.accepts( "metrics_http_port", "[deprecated]" ).withRequiredArg();
+        parser.accepts( "http_port", "the port the server will bind to when http reporting is configured" ).withRequiredArg();
+        parser.accepts( "http_path_prefix", "the http path prefix when metrics_type includes http or diagnostic is enabled, default /" ).withRequiredArg();
+        parser.accepts( "http_bind_address", "the ip address the server will bind to when http reporting is configured" ).withRequiredArg();
+        parser.accepts( "metrics_datadog_type", "when metrics_type includes datadog this is the way metrics will be reported, one of udp|http" ).withRequiredArg();
+        parser.accepts( "metrics_datadog_tags", "datadog tags that should be supplied, e.g. tag1:value1,tag2:value2" ).withRequiredArg();
+        parser.accepts( "metrics_datadog_interval", "the frequency metrics are pushed to datadog, in seconds" ).withRequiredArg();
+        parser.accepts( "metrics_datadog_apikey", "the datadog api key to use when metrics_datadog_type = http" ).withRequiredArg();
+        parser.accepts( "metrics_datadog_host", "the host to publish metrics to when metrics_datadog_type = udp" ).withRequiredArg();
+        parser.accepts( "metrics_datadog_port", "the port to publish metrics to when metrics_datadog_type = udp" ).withRequiredArg();
+        parser.accepts( "http_diagnostic", "enable http diagnostic endpoint: true|false. default: false" ).withOptionalArg();
+        parser.accepts( "http_diagnostic_timeout", "the http diagnostic response timeout in ms when http_diagnostic=true. default: 10000" ).withRequiredArg();
+        parser.accepts( "metrics_jvm", "enable jvm metrics: true|false. default: false" ).withRequiredArg();
+
+        parser.accepts( "__separator_11" );
+
+        parser.accepts( "help", "display help" ).forHelp();
+
+
+        BuiltinHelpFormatter helpFormatter = new BuiltinHelpFormatter(200, 4) {
+            @Override
+            public String format(Map<String, ? extends OptionDescriptor> options) {
+                this.addRows(options.values());
+                String output = this.formattedHelpOutput();
+                output = output.replaceAll("--__separator_.*", "");
+
+                Pattern deprecated = Pattern.compile("^.*\\[deprecated\\].*\\n", Pattern.MULTILINE);
+                return deprecated.matcher(output).replaceAll("");
+            }
+        };
+
+        parser.formatHelpWith(helpFormatter);
+        return parser;
+    }
+
+    private void parse(String [] argv) throws Exception {
         OptionSet options = buildOptionParser().parse(argv);
 
         Properties properties;
 
-        if(!Strings.isNullOrEmpty(source)){
-            properties =  new Properties();
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(source.getBytes("UTF-8"));
-            properties.load(inputStream);
-
-        }else {
-            if (options.has("config")) {
-                properties = parseFile((String) options.valueOf("config"), true);
-            } else {
-                properties = parseFile(DEFAULT_CONFIG_FILE, false);
-            }
+        if (options.has("config")) {
+            properties = parseFile((String) options.valueOf("config"), true);
+        } else {
+            properties = parseFile(DEFAULT_CONFIG_FILE, false);
         }
 
         String envConfigPrefix = fetchOption("env_config_prefix", options, properties, null);
@@ -74,6 +357,7 @@ public class MaxwellConfig extends com.zendesk.maxwell.MaxwellConfig {
             usage("Unknown argument(s): " + arguments);
         }
     }
+
     private void setup(OptionSet options, Properties properties) throws Exception {
         this.log_level = fetchOption("log_level", options, properties, null);
 
@@ -338,9 +622,7 @@ public class MaxwellConfig extends com.zendesk.maxwell.MaxwellConfig {
         }
     }
 
-
-    @Override
-    public void validate()  throws Exception{
+    public void validate() throws Exception{
         validatePartitionBy();
         validateFilter();
 
@@ -452,8 +734,43 @@ public class MaxwellConfig extends com.zendesk.maxwell.MaxwellConfig {
             try {
                 this.scripting = new Scripting(this.javascriptFile);
             } catch ( Exception e ) {
-                throw new Exception("Error setting up javascript: ");
+                LOGGER.error("Error setting up javascript: ", e);
+                System.exit(1);
             }
+        }
+    }
+
+    public Properties getKafkaProperties() {
+        return this.kafkaProperties;
+    }
+
+    public static Pattern compileStringToPattern(String name) throws InvalidFilterException {
+        name = name.trim();
+        if ( name.startsWith("/") ) {
+            if ( !name.endsWith("/") ) {
+                throw new InvalidFilterException("Invalid regular expression: " + name);
+            }
+            return Pattern.compile(name.substring(1, name.length() - 1));
+        } else {
+            return Pattern.compile("^" + Pattern.quote(name) + "$");
+        }
+    }
+
+    protected ProducerFactory fetchProducerFactory(OptionSet options, Properties properties) {
+        String name = "custom_producer.factory";
+        String strOption = fetchOption(name, options, properties, null);
+        if ( strOption != null ) {
+            try {
+                Class<?> clazz = Class.forName(strOption);
+                return ProducerFactory.class.cast(clazz.newInstance());
+            } catch ( ClassNotFoundException e ) {
+                usageForOptions("Invalid value for " + name + ", class not found", "--" + name);
+            } catch ( IllegalAccessException | InstantiationException | ClassCastException e) {
+                usageForOptions("Invalid value for " + name + ", class instantiation error", "--" + name);
+            }
+            return null; // unreached
+        } else {
+            return null;
         }
     }
 }
