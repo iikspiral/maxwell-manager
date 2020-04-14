@@ -19,6 +19,7 @@ import com.zendesk.maxwell.util.Logging;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.stereotype.Service;
 
 import java.lang.management.ManagementFactory;
@@ -70,6 +71,9 @@ public class MaxwellService {
     @Autowired
     private TablesDao tablesDao;
 
+    @Autowired
+    private DataSourceProperties dataSourceProperties;
+
     public synchronized MaxwellConfig initMaxwellConfig() throws Exception {
         if(maxwellConfig == null){
 
@@ -109,6 +113,22 @@ public class MaxwellService {
                 args.add("--config="+bootConfig.getConfigPath());
             }
 
+            //配置maxwell数据源与本web app数据源一致
+            String jdbcUrl = dataSourceProperties.getUrl();
+            jdbcUrl = jdbcUrl.substring("jdbc:mysql://".length());
+            String hostPort = jdbcUrl.substring(0,jdbcUrl.indexOf("/"));
+            String dbName = jdbcUrl.substring(jdbcUrl.indexOf("/")+1,jdbcUrl.indexOf("?"));
+            String jdbcOptions = jdbcUrl.substring(jdbcUrl.indexOf("?")+1,jdbcUrl.length());
+            args.add("--host=" + hostPort.split("\\:")[0]);
+            args.add("--port=" + hostPort.split("\\:")[1]);
+            args.add("--schema_database=" + dbName);
+            args.add("--jdbc_options=" + jdbcOptions);
+            args.add("--user=" + dataSourceProperties.getUsername());
+            args.add("--password=" + dataSourceProperties.getPassword());
+
+            //配置监控
+            args.add("--metrics_type=other");
+            args.add("--metrics_jvm=true");
             return new MaxwellConfig(args.toArray(new String[]{}),configProperties);
         }
         return maxwellConfig;
@@ -146,7 +166,6 @@ public class MaxwellService {
 
             Logging.setupLogBridging();
             maxwellConfig = initMaxwellConfig();
-
             if ( maxwellConfig.log_level != null )
                 Logging.setLevel(maxwellConfig.log_level);
 

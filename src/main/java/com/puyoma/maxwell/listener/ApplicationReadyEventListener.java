@@ -26,20 +26,18 @@ public class ApplicationReadyEventListener implements ApplicationListener<Applic
     @Override
     public void onApplicationEvent(ApplicationReadyEvent event) {
         Object obj = CacheUtil.getObjectByname(MaxwellBootConfig.MAXWELL_STATUS);
-        if(null != obj){
-            if((boolean)obj){
-                new Thread(){
-                    @Override
-                    public void run() {
-                        try {
-                            service.start();
-                        }catch (Exception var1){
-                            logger.error("",var1);
-                        }
+        if(null != obj && (boolean)obj){
+            new Thread(){
+                @Override
+                public void run() {
+                    try {
+                        service.start();
+                    }catch (Exception var1){
+                        logger.error("",var1);
+                        System.exit(-1);
                     }
-                }.start();
-            }
-
+                }
+            }.start();
         }
     }
 }
